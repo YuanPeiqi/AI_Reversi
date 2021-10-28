@@ -9,14 +9,14 @@ COLOR_NONE = 0
 random.seed(0)
 dr = [0, 1, 1, 1, 0, -1, -1, -1]
 dc = [-1, -1, 0, 1, 1, 1, 0, -1]
-weight = [[-500, 30, -200, -30, -30, -200, 30, -500],
-          [30, 50, -10, -5, -5, -10, 50, 30],
+weight = [[-500, 50, -200, -30, -30, -200, 50, -500],
+          [50, 100, -10, -5, -5, -10, 100, 50],
           [-200, -10, -5, 3, 3, -5, -10, -200],
           [-30, -5, 3, 1, 1, 3, -5, -30],
           [-30, -5, 3, 1, 1, 3, -5, -30],
           [-200, -10, -5, 3, 3, -5, -10, -200],
-          [30, 50, -10, -5, -5, -10, 50, 30],
-          [-500, 30, -50, -30, -30, -200, 30, -500]]
+          [50, 100, -10, -5, -5, -10, 100, 50],
+          [-500, 50, -50, -30, -30, -200, 50, -500]]
 
 
 # weight = [[-500, -100, -200, -30, -30, -200, -100, -500],
@@ -28,6 +28,8 @@ weight = [[-500, 30, -200, -30, -30, -200, 30, -500],
 #           [-100, -300, -10, -5, -5, -10, -300, -100],
 #           [-500, -100, -50, -30, -30, -200, -100, -500]]
 
+# weight = [[1 for i in range(8)] for j in range(8)]
+
 
 class Position(object):
     def __init__(self, priority, pos):
@@ -36,13 +38,6 @@ class Position(object):
 
     def __str__(self):
         return '(\'' + str(self.priority) + '\',' + str(self.pos) + ')'
-
-
-def sort(queue):
-    list_return = []
-    for item in queue:
-        list_return.append(Position(weight[item[0]][item[1]], item))
-    return sorted(list_return, key=lambda x: x.priority)
 
 
 def search(row, col, chessboard, current_color):
@@ -80,55 +75,147 @@ def find_valid_position(chessboard, color):
     return candidate_list
 
 
-# def alpha_beta_search(chessboard, candidate):
-#     def max_value(current_chessboard, current_candidate, depth, alpha, beta):
-#         if depth > 9:
-#             ret = 0
-#             for i in range(8):
-#                 for j in range(8):
-#                     ret += weight[i][j] * current_chessboard[i][j]
-#             return ret, None
-#         temp_chessboard = copy.deepcopy(chessboard)
-#         v1, move = -infinity, None
-#         for a in current_candidate:
-#             v2, _ = min_value(temp_chessboard, state, depth+1, alpha, beta)
-#             if v2 > v1:
-#                 v1, move = v2, a
-#                 alpha = max(alpha, v1)
-#             if v1 >= beta:
-#                 return v1, move
-#         return v1, move
-#
-#     def min_value(state, alpha, beta):
-#         if len(state) == 0:
-#             return self.utility, None
-#         v, move = infinity, None
-#         for a in game.actions(state):
-#             v2, _ = max_value(game.result(state, a), alpha, beta)
-#             # TODO: update *v*, *move* and *beta*
-#             if v2 < v:
-#                 v, move = v2, a
-#                 beta = min(beta, v)
-#             if v <= alpha:
-#                 return v, move
-#         return v, move
-#     return max_value(candidate, -infinity, +infinity)
+def action(move, chessboard, current_color):
+    chessboard[move[0]][move[1]] = current_color
+    for i in range(8):
+        r = move[0] + dr[i]
+        c = move[1] + dc[i]
+        flag = False
+        while 8 > r >= 0 and 8 > c >= 0:
+            if chessboard[r][c] == 0:
+                flag = False
+                break
+            elif chessboard[r][c] == -current_color:
+                flag = True
+                r += dr[i]
+                c += dc[i]
+            else:
+                break
+        if flag and 8 > r >= 0 and 8 > c >= 0:
+            r -= dr[i]
+            c -= dc[i]
+            while r != move[0] or c != move[1]:
+                chessboard[r][c] = current_color
+                r -= dr[i]
+                c -= dc[i]
 
 
-# def final_moves_utility(chessboard, my_color):
-#     cnt_white = 0
-#     cnt_black = 0
-#     for i in range(8):
-#         for j in range(8):
-#             if chessboard[i][j] == COLOR_WHITE:
-#                 if i == 0 and j == 0:
-#                     cnt_white += 10
-#                 cnt_white += 1
-#             if chessboard[i][j] == COLOR_BLACK:
-#                 if i == 0 and j == 0:
-#                     cnt_black += 10
-#                 cnt_black += 1
-#     return (cnt_black - cnt_white) if my_color == COLOR_WHITE else (cnt_white - cnt_black)
+def alpha_beta_search(chessboard, color):
+    def max_value(current_chessboard, current_candidate, depth, alpha, beta, current_color):
+        if current_chessboard[0][0] != 0:
+            weight[0][1] = -200
+            weight[1][0] = -200
+            weight[1][1] = -100
+        if current_chessboard[7][0] != 0:
+            weight[7][1] = -200
+            weight[6][0] = -200
+            weight[6][1] = -100
+            print(weight)
+        if current_chessboard[0][7] != 0:
+            weight[0][6] = -200
+            weight[1][7] = -200
+            weight[1][6] = -100
+        if current_chessboard[7][7] != 0:
+            weight[7][6] = -200
+            weight[6][7] = -200
+            weight[6][6] = -100
+        if depth > 3:
+            ret = 0
+            for i in range(8):
+                for j in range(8):
+                    if color == COLOR_WHITE:
+                        if current_chessboard[i][j] == COLOR_WHITE:
+                            ret += weight[i][j]
+                        elif current_chessboard[i][j] == COLOR_BLACK:
+                            ret -= weight[i][j]
+                    else:
+                        if current_chessboard[i][j] == COLOR_WHITE:
+                            ret -= weight[i][j]
+                        elif current_chessboard[i][j] == COLOR_BLACK:
+                            ret += weight[i][j]
+            return ret, None
+        v, move = -infinity, None
+        if not current_candidate:
+            temp_chessboard = copy.deepcopy(current_chessboard)
+            v2, _ = min_value(temp_chessboard, find_valid_position(temp_chessboard, -current_color), depth + 1, alpha,
+                              beta, -current_color)
+            if v2 > v:
+                v, move = v2, None
+            alpha = max(alpha, v)
+            if alpha >= beta:
+                return v, move
+        for a in current_candidate:
+            if a == (7, 0):
+                print("yes")
+            temp_chessboard = copy.deepcopy(current_chessboard)
+            action(a, temp_chessboard, current_color)
+            v2, _ = min_value(temp_chessboard, find_valid_position(temp_chessboard, -current_color), depth + 1, alpha,
+                              beta, -current_color)
+            if v2 > v:
+                v, move = v2, a
+            alpha = max(alpha, v)
+            if alpha >= beta:
+                return v, move
+        return v, move
+
+    def min_value(current_chessboard, current_candidate, depth, alpha, beta, current_color):
+        if current_chessboard[0][0] != 0:
+            weight[0][1] = -200
+            weight[1][0] = -200
+            weight[1][1] = -100
+        if current_chessboard[7][0] != 0:
+            weight[7][1] = -200
+            weight[6][0] = -200
+            weight[6][1] = -100
+            print(weight)
+        if current_chessboard[0][7] != 0:
+            weight[0][6] = -200
+            weight[1][7] = -200
+            weight[1][6] = -100
+        if current_chessboard[7][7] != 0:
+            weight[7][6] = -200
+            weight[6][7] = -200
+            weight[6][6] = -100
+        if depth > 3:
+            ret = 0
+            for i in range(8):
+                for j in range(8):
+                    if color == COLOR_WHITE:
+                        if current_chessboard[i][j] == COLOR_WHITE:
+                            ret += weight[i][j]
+                        elif current_chessboard[i][j] == COLOR_BLACK:
+                            ret -= weight[i][j]
+                    else:
+                        if current_chessboard[i][j] == COLOR_WHITE:
+                            ret -= weight[i][j]
+                        elif current_chessboard[i][j] == COLOR_BLACK:
+                            ret += weight[i][j]
+            return ret, None
+        v, move = infinity, None
+        if not current_candidate:
+            temp_chessboard = copy.deepcopy(current_chessboard)
+            v2, _ = max_value(temp_chessboard, find_valid_position(temp_chessboard, -current_color), depth + 1, alpha,
+                              beta, -current_color)
+            if v2 < v:
+                v, move = v2, None
+            beta = min(beta, v)
+            if beta <= alpha:
+                return v, move
+        for a in current_candidate:
+            if a == (7, 0):
+                print("yes")
+            temp_chessboard = copy.deepcopy(current_chessboard)
+            action(a, temp_chessboard, current_color)
+            v2, _ = max_value(temp_chessboard, find_valid_position(temp_chessboard, -current_color), depth + 1, alpha,
+                              beta, -current_color)
+            if v2 < v:
+                v, move = v2, a
+            beta = min(beta, v)
+            if beta <= alpha:
+                return v, move
+        return v, move
+
+    return max_value(chessboard, find_valid_position(chessboard, color), 0, -infinity, +infinity, color)
 
 
 def alpha_beta(depth, chessboard, my_turn, current_color, alpha, beta, cnt, my_color):
@@ -148,7 +235,7 @@ def alpha_beta(depth, chessboard, my_turn, current_color, alpha, beta, cnt, my_c
         weight[7][6] = -200
         weight[6][7] = -200
         weight[6][6] = -100
-    if depth > 6 or cnt > 60:
+    if depth > 5 or cnt > 60:
         utility = 0
         for i in range(8):
             for j in range(8):
@@ -253,46 +340,51 @@ class AI(object):
         self.candidate_list = []
         self.utility = 0
 
-    # The input is current chessboard.
+    # alpha_beta_0
+    # def go(self, chessboard):
+    #     # Clear candidate_list, must do this step
+    #     self.candidate_list.clear()
+    #     self.candidate_list = find_valid_position(chessboard, self.color)
+    #     idx_none = np.where(chessboard == COLOR_NONE)
+    #     idx_none = list(zip(idx_none[0], idx_none[1]))
+    #     num = len(idx_none)
+    #     _, move = alpha_beta(0, chessboard, 1, self.color, -1000000000, 1000000000, 64 - num, self.color)
+    #     if move != (-1, -1):
+    #         # self.candidate_list.remove(move)
+    #         self.candidate_list.append(move)
+    #         self.candidate_list.append(move)
+    #         self.candidate_list.append(move)
+    #     return self.candidate_list
+
+    # alpha_beta_1
     def go(self, chessboard):
         # Clear candidate_list, must do this step
         self.candidate_list.clear()
         self.candidate_list = find_valid_position(chessboard, self.color)
-        idx_none = np.where(chessboard == COLOR_NONE)
-        idx_none = list(zip(idx_none[0], idx_none[1]))
-        num = len(idx_none)
-        _, move = alpha_beta(0, chessboard, 1, self.color, -1000000000, 1000000000, 64 - num, self.color)
-        if move != (-1, -1):
-            # self.candidate_list.remove(move)
+        _, move = alpha_beta_search(chessboard, self.color)
+        if move is not None:
+            self.candidate_list.remove(move)
             self.candidate_list.append(move)
-            self.candidate_list.append(move)
-            self.candidate_list.append(move)
+        # if move == (0,0) or move == (0,7) or move == (7,0) or move == (7,7):
+        #     self.candidate_list.pop()
         return self.candidate_list
-        # if self.candidate_list:
-        #     index = np.random.randint(0, 10, size=1)
-        #     self.candidate_list.append(self.candidate_list[index[0]])
-        # ==============Find new pos========================================
-        # Make sure that the position of your decision in chess board is empty.
-        # If not, the system will return error.
-        # Add your decision into candidate_list, Records the chess board
-        # You need add all the positions which is valid
-        # candidate_list example: [(3,3),(4,4)]
-        # You need append your decision at the end of the candidate_list,
-        # we will choice the last element of the candidate_list as the position you choose
-        # If there is no valid position, you must return an empty list.
 
 
 if __name__ == "__main__":
-    my_ai_b = AI(8, -1, 10)
-    print(my_ai_b.go(np.array(
-        [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0], [0, 1, 1, 1, 1, 0, 0, 0],
-         [0, 0, 1, 1, 1, 1, 1, 0], [0, 0, 1, 1, 1, 1, 1, 0], [0, 0, 1, -1, 1, -1, 0, 1],
-         [0, 1, -1, -1, 1, -1, -1, 0]])))
+    # my_ai_b = AI(8, -1, 10)
+    # print(my_ai_b.go(np.array(
+    #     [[0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 1, 1, 0, 0, 0, 0], [0, 0, 1, -1, 0, 0, 0, 0], [0, 0, 0, 1, -1, 0, 0, 0],
+    #      [0, 0, 0, -1, -1, -1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]])))
+    # print(my_ai_b.go(np.array(
+    #     [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, -1, 0, 0], [0, 0, 0, -1, -1, 0, 0, 0], [0, 0, 1, 1, 1, 0, 0, 0],
+    #      [0, 1, -1, -1, 1, 0, 0, 0], [0, -1, -1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]])))
+
     my_ai_w = AI(8, 1, 10)
     print(my_ai_w.go(np.array(
-        [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, -1, 0], [0, 0, 0, 1, 1, 1, -1, 0],
-         [0, 0, 0, -1, 1, 0, -1, 0], [0, 0, 0, 0, -1, 0, -1, 1], [0, 0, 1, 1, 1, -1, -1, -1],
-         [0, 0, -1, 0, -1, 1, -1, 0]])))
-    print(my_ai_b.go(np.array(
-        [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 1, 1, -1, 0],
-         [0, 0, -1, -1, -1, -1, 1, -1], [0, 0, 0, 1, 1, 0, -1, -1], [0, 0, 1, 1, 1, 1, 1, -1], [0, 1, 1, 1, 1, 1, 1, -1]])))
+        [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, -1, 0], [0, 0, 0, 1, 1, -1, 1, 1],
+         [0, 0, 1, 1, -1, 1, -1, 0], [0, 0, 1, -1, -1, -1, 0, 0], [-1, -1, -1, -1, -1, -1, 0, 0],
+         [0, -1, 0, 0, -1, 0, 0, 0]])))
+    # print(my_ai_b.go(np.array(
+    #     [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 1, 1, -1, 0],
+    #      [0, 0, -1, -1, -1, -1, 1, -1], [0, 0, 0, 1, 1, 0, -1, -1], [0, 0, 1, 1, 1, 1, 1, -1],
+    #      [0, 1, 1, 1, 1, 1, 1, -1]])))
