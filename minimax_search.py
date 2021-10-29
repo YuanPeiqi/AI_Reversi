@@ -9,35 +9,14 @@ COLOR_NONE = 0
 random.seed(0)
 dr = [0, 1, 1, 1, 0, -1, -1, -1]
 dc = [-1, -1, 0, 1, 1, 1, 0, -1]
-weight = [[-500, 50, -200, -30, -30, -200, 50, -500],
-          [50, 100, -10, -5, -5, -10, 100, 50],
-          [-200, -10, -5, 3, 3, -5, -10, -200],
-          [-30, -5, 3, 1, 1, 3, -5, -30],
-          [-30, -5, 3, 1, 1, 3, -5, -30],
-          [-200, -10, -5, 3, 3, -5, -10, -200],
-          [50, 100, -10, -5, -5, -10, 100, 50],
-          [-500, 50, -50, -30, -30, -200, 50, -500]]
-
-
-# weight = [[-500, -100, -200, -30, -30, -200, -100, -500],
-#           [-100, -300, -10, -5, -5, -10, -300, -100],
-#           [-200, -10, -5, -3, -3, -5, -10, -200],
-#           [-30, -5, -3, 1, 1, -3, -5, -30],
-#           [-30, -5, -3, 1, 1, -3, -5, -30],
-#           [-200, -10, -5, -3, -3, -5, -10, -200],
-#           [-100, -300, -10, -5, -5, -10, -300, -100],
-#           [-500, -100, -50, -30, -30, -200, -100, -500]]
-
-# weight = [[1 for i in range(8)] for j in range(8)]
-
-
-class Position(object):
-    def __init__(self, priority, pos):
-        self.priority = priority
-        self.pos = pos
-
-    def __str__(self):
-        return '(\'' + str(self.priority) + '\',' + str(self.pos) + ')'
+weight = [[-500, 70, -30, 30, 30, -30, 70, -500],
+          [70, 150, -10, -5, -5, -10, 150, 70],
+          [-30, -10, -5, 10, 10, -5, -10, -30],
+          [30, -5, 10, 1, 1, 10, -5, 30],
+          [30, -5, 10, 1, 1, 10, -5, 30],
+          [-30, -10, -5, 10, 10, -5, -10, -30],
+          [70, 150, -10, -5, -5, -10, 150, 70],
+          [-500, 70, -30, 30, 30, -30, 70, -500]]
 
 
 def search(row, col, chessboard, current_color):
@@ -65,6 +44,7 @@ def nextSearch(r, c, i, chessboard, current_color):
             return False
 
 
+# 找到当前所有合法位置
 def find_valid_position(chessboard, color):
     candidate_list = []
     idx_none = np.where(chessboard == COLOR_NONE)
@@ -75,6 +55,7 @@ def find_valid_position(chessboard, color):
     return candidate_list
 
 
+# 棋子下在当前位置
 def action(move, chessboard, current_color):
     chessboard[move[0]][move[1]] = current_color
     for i in range(8):
@@ -100,25 +81,44 @@ def action(move, chessboard, current_color):
                 c -= dc[i]
 
 
+def stator(current_chessboard, color):
+    if current_chessboard[0][0] == color:
+        weight[0][1] = -200
+        weight[1][0] = -200
+        weight[1][1] = -100
+        weight[0][3] = -50
+        weight[0][4] = -30
+        weight[3][0] = -50
+        weight[4][0] = -30
+    if current_chessboard[7][0] == color:
+        weight[7][1] = -200
+        weight[6][0] = -200
+        weight[6][1] = -100
+        weight[4][0] = -50
+        weight[3][0] = -30
+        weight[7][3] = -50
+        weight[7][4] = -30
+    if current_chessboard[0][7] == color:
+        weight[0][6] = -200
+        weight[1][7] = -200
+        weight[1][6] = -100
+        weight[0][4] = -50
+        weight[0][3] = -30
+        weight[3][7] = -50
+        weight[4][7] = -30
+    if current_chessboard[7][7] == color:
+        weight[7][6] = -200
+        weight[6][7] = -200
+        weight[6][6] = -100
+        weight[7][4] = -50
+        weight[7][3] = -30
+        weight[4][7] = -50
+        weight[3][7] = -30
+
+
 def alpha_beta_search(chessboard, color):
     def max_value(current_chessboard, current_candidate, depth, alpha, beta, current_color):
-        if current_chessboard[0][0] != 0:
-            weight[0][1] = -200
-            weight[1][0] = -200
-            weight[1][1] = -100
-        if current_chessboard[7][0] != 0:
-            weight[7][1] = -200
-            weight[6][0] = -200
-            weight[6][1] = -100
-            print(weight)
-        if current_chessboard[0][7] != 0:
-            weight[0][6] = -200
-            weight[1][7] = -200
-            weight[1][6] = -100
-        if current_chessboard[7][7] != 0:
-            weight[7][6] = -200
-            weight[6][7] = -200
-            weight[6][6] = -100
+        stator(current_chessboard, color)
         if depth > 3:
             ret = 0
             for i in range(8):
@@ -145,8 +145,6 @@ def alpha_beta_search(chessboard, color):
             if alpha >= beta:
                 return v, move
         for a in current_candidate:
-            if a == (7, 0):
-                print("yes")
             temp_chessboard = copy.deepcopy(current_chessboard)
             action(a, temp_chessboard, current_color)
             v2, _ = min_value(temp_chessboard, find_valid_position(temp_chessboard, -current_color), depth + 1, alpha,
@@ -159,23 +157,7 @@ def alpha_beta_search(chessboard, color):
         return v, move
 
     def min_value(current_chessboard, current_candidate, depth, alpha, beta, current_color):
-        if current_chessboard[0][0] != 0:
-            weight[0][1] = -200
-            weight[1][0] = -200
-            weight[1][1] = -100
-        if current_chessboard[7][0] != 0:
-            weight[7][1] = -200
-            weight[6][0] = -200
-            weight[6][1] = -100
-            print(weight)
-        if current_chessboard[0][7] != 0:
-            weight[0][6] = -200
-            weight[1][7] = -200
-            weight[1][6] = -100
-        if current_chessboard[7][7] != 0:
-            weight[7][6] = -200
-            weight[6][7] = -200
-            weight[6][6] = -100
+        stator(current_chessboard, color)
         if depth > 3:
             ret = 0
             for i in range(8):
@@ -202,8 +184,6 @@ def alpha_beta_search(chessboard, color):
             if beta <= alpha:
                 return v, move
         for a in current_candidate:
-            if a == (7, 0):
-                print("yes")
             temp_chessboard = copy.deepcopy(current_chessboard)
             action(a, temp_chessboard, current_color)
             v2, _ = max_value(temp_chessboard, find_valid_position(temp_chessboard, -current_color), depth + 1, alpha,
@@ -218,113 +198,113 @@ def alpha_beta_search(chessboard, color):
     return max_value(chessboard, find_valid_position(chessboard, color), 0, -infinity, +infinity, color)
 
 
-def alpha_beta(depth, chessboard, my_turn, current_color, alpha, beta, cnt, my_color):
-    if chessboard[0][0] != 0:
-        weight[0][1] = -200
-        weight[1][0] = -200
-        weight[1][1] = -100
-    if chessboard[7][0] != 0:
-        weight[7][1] = -200
-        weight[6][0] = -200
-        weight[6][1] = -100
-    if chessboard[0][7] != 0:
-        weight[0][6] = -200
-        weight[1][7] = -200
-        weight[1][6] = -100
-    if chessboard[7][7] != 0:
-        weight[7][6] = -200
-        weight[6][7] = -200
-        weight[6][6] = -100
-    if depth > 5 or cnt > 60:
-        utility = 0
-        for i in range(8):
-            for j in range(8):
-                if my_color == COLOR_WHITE:
-                    utility += weight[i][j] * chessboard[i][j]
-                else:
-                    utility -= weight[i][j] * chessboard[i][j]
-        return utility, (-1, -1)
-    ans = (-1, -1)
-    temp = copy.deepcopy(chessboard)
-    total = 0
-    if my_turn:
-        for pos in range(64):
-            pos_x = int(pos / 8)
-            pos_y = pos % 8
-            if chessboard[pos_x][pos_y] == COLOR_NONE:
-                flag = False
-                for k in range(8):
-                    t = 0
-                    x = pos_x + dr[k]
-                    y = pos_y + dc[k]
-                    if 0 <= x <= 7 and 0 <= y <= 7:
-                        while chessboard[x][y] == -current_color:
-                            t += 1
-                            x += dr[k]
-                            y += dc[k]
-                            if x > 7 or y > 7 or x < 0 or y < 0:
-                                break
-                    if 0 <= x <= 7 and 0 <= y <= 7:
-                        if t != 0 and chessboard[x][y] == current_color:
-                            while True:
-                                x -= dr[k]
-                                y -= dc[k]
-                                chessboard[x][y] = current_color
-                                if x == pos_x and y == pos_y:
-                                    break
-                            flag = True
-                if flag:
-                    total += 1
-                    v, _ = alpha_beta(depth + 1, chessboard, my_turn ^ 1, -current_color, alpha, beta, cnt + 1,
-                                      my_color)
-                    if v > alpha:
-                        if depth == 0:
-                            ans = (pos_x, pos_y)
-                        alpha = v
-                    chessboard = copy.deepcopy(temp)
-                    if beta <= alpha:
-                        break
-
-    if not total:
-        my_turn = 0
-    if not my_turn:
-        for pos in range(64):
-            pos_x = int(pos / 8)
-            pos_y = pos % 8
-            if chessboard[pos_x][pos_y] == COLOR_NONE:
-                flag = False
-                for k in range(8):
-                    t = 0
-                    x = pos_x + dr[k]
-                    y = pos_y + dc[k]
-                    if 0 <= x <= 7 and 0 <= y <= 7:
-                        while chessboard[x][y] == -current_color:
-                            t += 1
-                            x += dr[k]
-                            y += dc[k]
-                            if x > 7 or y > 7 or x < 0 or y < 0:
-                                break
-                    if 0 <= x <= 7 and 0 <= y <= 7:
-                        if t != 0 and chessboard[x][y] == current_color:
-                            while True:
-                                x -= dr[k]
-                                y -= dc[k]
-                                chessboard[x][y] = current_color
-                                if x == pos_x and y == pos_y:
-                                    break
-                            flag = True
-                if flag:
-                    v, _ = alpha_beta(depth + 1, chessboard, my_turn ^ 1, -current_color, alpha, beta, cnt + 1,
-                                      my_color)
-                    if beta > v:
-                        beta = v
-                    chessboard = copy.deepcopy(temp)
-                    if beta <= alpha:
-                        break
-    if my_turn:
-        return alpha, ans
-    else:
-        return beta, ans
+# def alpha_beta(depth, chessboard, my_turn, current_color, alpha, beta, cnt, my_color):
+#     if chessboard[0][0] != 0:
+#         weight[0][1] = -200
+#         weight[1][0] = -200
+#         weight[1][1] = -100
+#     if chessboard[7][0] != 0:
+#         weight[7][1] = -200
+#         weight[6][0] = -200
+#         weight[6][1] = -100
+#     if chessboard[0][7] != 0:
+#         weight[0][6] = -200
+#         weight[1][7] = -200
+#         weight[1][6] = -100
+#     if chessboard[7][7] != 0:
+#         weight[7][6] = -200
+#         weight[6][7] = -200
+#         weight[6][6] = -100
+#     if depth > 5 or cnt > 60:
+#         utility = 0
+#         for i in range(8):
+#             for j in range(8):
+#                 if my_color == COLOR_WHITE:
+#                     utility += weight[i][j] * chessboard[i][j]
+#                 else:
+#                     utility -= weight[i][j] * chessboard[i][j]
+#         return utility, (-1, -1)
+#     ans = (-1, -1)
+#     temp = copy.deepcopy(chessboard)
+#     total = 0
+#     if my_turn:
+#         for pos in range(64):
+#             pos_x = int(pos / 8)
+#             pos_y = pos % 8
+#             if chessboard[pos_x][pos_y] == COLOR_NONE:
+#                 flag = False
+#                 for k in range(8):
+#                     t = 0
+#                     x = pos_x + dr[k]
+#                     y = pos_y + dc[k]
+#                     if 0 <= x <= 7 and 0 <= y <= 7:
+#                         while chessboard[x][y] == -current_color:
+#                             t += 1
+#                             x += dr[k]
+#                             y += dc[k]
+#                             if x > 7 or y > 7 or x < 0 or y < 0:
+#                                 break
+#                     if 0 <= x <= 7 and 0 <= y <= 7:
+#                         if t != 0 and chessboard[x][y] == current_color:
+#                             while True:
+#                                 x -= dr[k]
+#                                 y -= dc[k]
+#                                 chessboard[x][y] = current_color
+#                                 if x == pos_x and y == pos_y:
+#                                     break
+#                             flag = True
+#                 if flag:
+#                     total += 1
+#                     v, _ = alpha_beta(depth + 1, chessboard, my_turn ^ 1, -current_color, alpha, beta, cnt + 1,
+#                                       my_color)
+#                     if v > alpha:
+#                         if depth == 0:
+#                             ans = (pos_x, pos_y)
+#                         alpha = v
+#                     chessboard = copy.deepcopy(temp)
+#                     if beta <= alpha:
+#                         break
+#
+#     if not total:
+#         my_turn = 0
+#     if not my_turn:
+#         for pos in range(64):
+#             pos_x = int(pos / 8)
+#             pos_y = pos % 8
+#             if chessboard[pos_x][pos_y] == COLOR_NONE:
+#                 flag = False
+#                 for k in range(8):
+#                     t = 0
+#                     x = pos_x + dr[k]
+#                     y = pos_y + dc[k]
+#                     if 0 <= x <= 7 and 0 <= y <= 7:
+#                         while chessboard[x][y] == -current_color:
+#                             t += 1
+#                             x += dr[k]
+#                             y += dc[k]
+#                             if x > 7 or y > 7 or x < 0 or y < 0:
+#                                 break
+#                     if 0 <= x <= 7 and 0 <= y <= 7:
+#                         if t != 0 and chessboard[x][y] == current_color:
+#                             while True:
+#                                 x -= dr[k]
+#                                 y -= dc[k]
+#                                 chessboard[x][y] = current_color
+#                                 if x == pos_x and y == pos_y:
+#                                     break
+#                             flag = True
+#                 if flag:
+#                     v, _ = alpha_beta(depth + 1, chessboard, my_turn ^ 1, -current_color, alpha, beta, cnt + 1,
+#                                       my_color)
+#                     if beta > v:
+#                         beta = v
+#                     chessboard = copy.deepcopy(temp)
+#                     if beta <= alpha:
+#                         break
+#     if my_turn:
+#         return alpha, ans
+#     else:
+#         return beta, ans
 
 
 # don't change the class name
@@ -338,7 +318,6 @@ class AI(object):
         self.time_out = time_out
         # You need add your decision into your candidate_list. System will get the end of your candidate_list as your decision .
         self.candidate_list = []
-        self.utility = 0
 
     # alpha_beta_0
     # def go(self, chessboard):
@@ -365,26 +344,29 @@ class AI(object):
         if move is not None:
             self.candidate_list.remove(move)
             self.candidate_list.append(move)
-        # if move == (0,0) or move == (0,7) or move == (7,0) or move == (7,7):
-        #     self.candidate_list.pop()
         return self.candidate_list
 
+# if __name__ == "__main__":
+# my_ai_b = AI(8, -1, 10)
+# print(my_ai_b.go(np.array(
+#     [[0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 1, 1, 0, 0, 0, 0], [0, 0, 1, -1, 0, 0, 0, 0], [0, 0, 0, 1, -1, 0, 0, 0],
+#      [0, 0, 0, -1, -1, -1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]])))
+# print(my_ai_b.go(np.array(
+#     [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, -1, 0, 0], [0, 0, 0, -1, -1, 0, 0, 0], [0, 0, 1, 1, 1, 0, 0, 0],
+#      [0, 1, -1, -1, 1, 0, 0, 0], [0, -1, -1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]])))
 
-if __name__ == "__main__":
-    # my_ai_b = AI(8, -1, 10)
-    # print(my_ai_b.go(np.array(
-    #     [[0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 1, 1, 0, 0, 0, 0], [0, 0, 1, -1, 0, 0, 0, 0], [0, 0, 0, 1, -1, 0, 0, 0],
-    #      [0, 0, 0, -1, -1, -1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]])))
-    # print(my_ai_b.go(np.array(
-    #     [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, -1, 0, 0], [0, 0, 0, -1, -1, 0, 0, 0], [0, 0, 1, 1, 1, 0, 0, 0],
-    #      [0, 1, -1, -1, 1, 0, 0, 0], [0, -1, -1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]])))
-
-    my_ai_w = AI(8, 1, 10)
-    print(my_ai_w.go(np.array(
-        [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, -1, 0], [0, 0, 0, 1, 1, -1, 1, 1],
-         [0, 0, 1, 1, -1, 1, -1, 0], [0, 0, 1, -1, -1, -1, 0, 0], [-1, -1, -1, -1, -1, -1, 0, 0],
-         [0, -1, 0, 0, -1, 0, 0, 0]])))
-    # print(my_ai_b.go(np.array(
-    #     [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 1, 1, -1, 0],
-    #      [0, 0, -1, -1, -1, -1, 1, -1], [0, 0, 0, 1, 1, 0, -1, -1], [0, 0, 1, 1, 1, 1, 1, -1],
-    #      [0, 1, 1, 1, 1, 1, 1, -1]])))
+# my_ai_w = AI(8, 1, 10)
+# stator([[0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, -1, 0], [0, 0, 0, 1, 1, -1, 1, 1],
+#         [0, 0, 1, 1, -1, 1, -1, 0], [0, 0, 1, -1, -1, -1, 0, 0], [-1, -1, -1, -1, -1, -1, 0, 0],
+#         [1, -1, 0, 0, -1, 0, 0, 0]], 1)
+# for item in weight:
+#     print(item)
+# print(weight)
+# print(my_ai_w.go(np.array(
+#     [[1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, -1, 0], [0, 0, 0, 1, 1, -1, 1, 1],
+#      [0, 0, 1, 1, -1, 1, -1, 0], [0, 0, 1, -1, -1, -1, 0, 0], [-1, -1, -1, -1, -1, -1, 0, 0],
+#      [0, -1, 0, 0, -1, 0, 0, 0]])))
+# print(my_ai_b.go(np.array(
+#     [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 1, 1, -1, 0],
+#      [0, 0, -1, -1, -1, -1, 1, -1], [0, 0, 0, 1, 1, 0, -1, -1], [0, 0, 1, 1, 1, 1, 1, -1],
+#      [0, 1, 1, 1, 1, 1, 1, -1]])))
