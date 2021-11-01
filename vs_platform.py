@@ -1,6 +1,6 @@
 import numpy as np
 import minimax_search_0 as my_ai
-import RevNew4 as other_ai
+import minimax_search_normal as other_ai
 
 
 dr = [0, 1, 1, 1, 0, -1, -1, -1]
